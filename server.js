@@ -40,6 +40,10 @@ app.post(
   }
 );
 
+app.get('/api/ping', function (req, res) {
+  res.send('pong');
+});
+
 app.use(express.static(path.join(__dirname, 'build')));
 
 app.listen(port, () => {
