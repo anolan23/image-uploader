@@ -10,6 +10,7 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [imageUrl, setImageUrl] = useState('');
   const [uploaded, setUploaded] = useState(false);
+  const [error, setError] = useState('');
 
   const upload = async (file) => {
     try {
@@ -23,11 +24,20 @@ function App() {
           setProgress(p.loaded / p.total);
         },
       });
-      console.log(res);
       setImageUrl(`${window.location.href}api/uploads/${res.data.fileName}`);
       setUploaded(true);
-    } catch (error) {
-      console.error(new Error(error.response.data.error));
+    } catch (err) {
+      if (err.response) {
+        console.error(new Error(err.response.data.error));
+        setError(`Error: ${err.response.data.error}`);
+      } else if (err.request) {
+        console.log(err.request);
+        console.error(new Error(err.request));
+        setError(`Error: failed to receive a response`);
+      } else {
+        console.error(new Error(err.message));
+        setError(`Error: ${err.message}`);
+      }
     }
   };
 
@@ -35,13 +45,36 @@ function App() {
     upload(e.target.files[0]);
   };
 
+  const onDrop = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.items) {
+      // Use DataTransferItemList interface to access the file(s)
+      // If dropped items aren't files, reject them
+      if (e.dataTransfer.items[0].kind === 'file') {
+        const file = e.dataTransfer.items[0].getAsFile();
+        upload(file);
+      }
+    } else {
+      // Use DataTransfer interface to access the file(s)
+      const file = e.dataTransfer.files[0];
+      upload(file);
+    }
+  };
+
   const renderStep = () => {
+    if (error) {
+      return (
+        <div className="error">
+          <h1>{error}</h1>
+        </div>
+      );
+    }
     if (progress === 0) {
       return (
         <div className="upload">
           <h1 className="upload__heading">Upload your image</h1>
           <span className="upload__message">File should be jpg, png...</span>
-          <Preview>
+          <Preview onDrop={onDrop}>
             <div className="upload__preview">
               <img
                 src="image.svg"
